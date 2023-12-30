@@ -21,6 +21,11 @@ class CashCardJsonTest {
     @Autowired
     private JacksonTester<CashCard> json;
 
+    CashCard[] cashCards = Arrays.array(new CashCard(99L, 123.45),
+            new CashCard(100L, 100.00),
+            new CashCard(100L, 1.00),
+            new CashCard(101L, 150.00));
+
     @Test
     void cashCardSerializationTest() throws IOException {
         CashCard cashCard = new CashCard(99L, 123.45);
@@ -36,11 +41,11 @@ class CashCardJsonTest {
     @Test
     void cashCardDeserializationTest() throws IOException {
         String expected = """
-           {
-               "id":99,
-               "amount":123.45
-           }
-           """;
+                {
+                    "id":99,
+                    "amount":123.45
+                }
+                """;
         assertThat(json.parse(expected))
                 .isEqualTo(new CashCard(99L, 123.45));
         assertThat(json.parseObject(expected).id()).isEqualTo(99);
@@ -49,11 +54,6 @@ class CashCardJsonTest {
 
     @Test
     void cashCardListSerializationTest() throws IOException {
-        cashCards = Arrays.array(
-                new CashCard(99L, 123.45),
-                new CashCard(100L, 100.00),
-                new CashCard(100L, 1.00),
-                new CashCard(101L, 150.00));
         assertThat(jsonList.write(cashCards)).isStrictlyEqualToJson("list.json");
     }
 
@@ -69,6 +69,7 @@ class CashCardJsonTest {
         assertThat(jsonList.parse(expected)).isEqualTo(cashCards);
     }
 
+
     @Test
     void shouldReturnAllCashCardsWhenListIsRequested() {
         ResponseEntity<String> response = restTemplate.getForEntity("/cashcards", String.class);
@@ -79,10 +80,10 @@ class CashCardJsonTest {
         assertThat(cashCardCount).isEqualTo(3);
 
         JSONArray ids = documentContext.read("$..id");
-        assertThat(ids).containsExactlyInAnyOrder(123.45, 1.00, 150.00);
+        assertThat(ids).containsExactlyInAnyOrder(99, 100, 101);
 
         JSONArray amounts = documentContext.read("$..amount");
-        assertThat(amounts).containsExactlyInAnyOrder(123.45, 100.0, 150.00);
+        assertThat(amounts).containsExactlyInAnyOrder(123.45, 1.00, 150.00);
     }
 
 }
