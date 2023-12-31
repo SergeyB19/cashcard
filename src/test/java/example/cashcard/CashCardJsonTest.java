@@ -1,14 +1,12 @@
 package example.cashcard;
-import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.JsonPath;
+
+
 import org.assertj.core.util.Arrays;
-import org.h2.util.json.JSONArray;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.JsonTest;
 import org.springframework.boot.test.json.JacksonTester;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 
@@ -20,15 +18,23 @@ class CashCardJsonTest {
     @Autowired
     private JacksonTester<CashCard> json;
 
-    CashCard[] cashCards = Arrays.array(new CashCard(99L, 123.45, principal.getName()),
-            new CashCard(100L, 100.00, principal.getName()),
-            new CashCard(100L, 1.00, principal.getName()),
-            new CashCard(101L, 150.00, principal.getName()));
+    @Autowired
+    private JacksonTester<CashCard[]> jsonList;
+
+    private CashCard[] cashCards;
+
+    @BeforeEach
+    void setUp() {
+        cashCards = Arrays.array(
+                new CashCard(99L, 123.45, "sarah1"),
+                new CashCard(100L, 1.00, "sarah1"),
+                new CashCard(101L, 150.00, "sarah1"));
+    }
 
     @Test
     void cashCardSerializationTest() throws IOException {
-        CashCard cashCard = new CashCard(99L, 123.45, principal.getName());
-        assertThat(json.write(cashCard)).isStrictlyEqualToJson("expected.json");
+        CashCard cashCard = cashCards[0];
+        assertThat(json.write(cashCard)).isStrictlyEqualToJson("single.json");
         assertThat(json.write(cashCard)).hasJsonPathNumberValue("@.id");
         assertThat(json.write(cashCard)).extractingJsonPathNumberValue("@.id")
                 .isEqualTo(99);
@@ -41,13 +47,14 @@ class CashCardJsonTest {
     void cashCardDeserializationTest() throws IOException {
         String expected = """
                 {
-                    "id":99,
-                    "amount":123.45
+                    "id": 99,
+                    "amount": 123.45, 
+                    "owner": "sarah1"
                 }
                 """;
         assertThat(json.parse(expected))
-                .isEqualTo(new CashCard(99L, 123.45, principal.getName()));
-        assertThat(json.parseObject(expected).id()).isEqualTo(99);
+                .isEqualTo(new CashCard(99L, 123.45, "sarah1"));
+        assertThat(json.parseObject(expected).id()).isEqualTo(99L);
         assertThat(json.parseObject(expected).amount()).isEqualTo(123.45);
     }
 
@@ -58,31 +65,14 @@ class CashCardJsonTest {
 
     @Test
     void cashCardListDeserializationTest() throws IOException {
-        String expected="""
-    [
-        { "id": 99, "amount": 123.45 },
-        { "id": 100, "amount": 1.00 },
-        { "id": 101, "amount": 150.00 }
-    ]
-    """;
+        String expected = """
+                [
+                     {"id": 99, "amount": 123.45 , "owner": "sarah1"},
+                     {"id": 100, "amount": 1.00 , "owner": "sarah1"},
+                     {"id": 101, "amount": 150.00, "owner": "sarah1"}
+                                                  
+                ]
+                """;
         assertThat(jsonList.parse(expected)).isEqualTo(cashCards);
     }
-
-
-    @Test
-    void shouldReturnAllCashCardsWhenListIsRequested() {
-        ResponseEntity<String> response = restTemplate.getForEntity("/cashcards", String.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-        DocumentContext documentContext = JsonPath.parse(response.getBody());
-        int cashCardCount = documentContext.read("$.length()");
-        assertThat(cashCardCount).isEqualTo(3);
-
-        JSONArray ids = documentContext.read("$..id");
-        assertThat(ids).containsExactlyInAnyOrder(99, 100, 101);
-
-        JSONArray amounts = documentContext.read("$..amount");
-        assertThat(amounts).containsExactlyInAnyOrder(123.45, 1.00, 150.00);
-    }
-
 }
