@@ -1,5 +1,4 @@
 package example.cashcard;
-
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import org.assertj.core.util.Arrays;
@@ -21,14 +20,14 @@ class CashCardJsonTest {
     @Autowired
     private JacksonTester<CashCard> json;
 
-    CashCard[] cashCards = Arrays.array(new CashCard(99L, 123.45),
-            new CashCard(100L, 100.00),
-            new CashCard(100L, 1.00),
-            new CashCard(101L, 150.00));
+    CashCard[] cashCards = Arrays.array(new CashCard(99L, 123.45, principal.getName()),
+            new CashCard(100L, 100.00, principal.getName()),
+            new CashCard(100L, 1.00, principal.getName()),
+            new CashCard(101L, 150.00, principal.getName()));
 
     @Test
     void cashCardSerializationTest() throws IOException {
-        CashCard cashCard = new CashCard(99L, 123.45);
+        CashCard cashCard = new CashCard(99L, 123.45, principal.getName());
         assertThat(json.write(cashCard)).isStrictlyEqualToJson("expected.json");
         assertThat(json.write(cashCard)).hasJsonPathNumberValue("@.id");
         assertThat(json.write(cashCard)).extractingJsonPathNumberValue("@.id")
@@ -47,7 +46,7 @@ class CashCardJsonTest {
                 }
                 """;
         assertThat(json.parse(expected))
-                .isEqualTo(new CashCard(99L, 123.45));
+                .isEqualTo(new CashCard(99L, 123.45, principal.getName()));
         assertThat(json.parseObject(expected).id()).isEqualTo(99);
         assertThat(json.parseObject(expected).amount()).isEqualTo(123.45);
     }
